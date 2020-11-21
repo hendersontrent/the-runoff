@@ -60,8 +60,8 @@ winner_loser_data <- tmp1 %>%
     TRUE                    ~ "Remove")) %>%
   filter(winner != "Remove") %>%
   mutate(did_i_win = case_when(
-    playing_for == winner ~ "Win",
-    TRUE                  ~ "Lose")) %>%
+    playing_for == winner ~ 1,
+    TRUE                  ~ 0)) %>%
   mutate(did_i_win = as.factor(did_i_win)) %>%
   group_by(season, round, did_i_win) %>%
   summarise(kicks = sum(kicks),
@@ -86,4 +86,4 @@ winner_loser_data <- tmp1 %>%
 
 #---------------------- Save data for use --------------------------
 
-write_csv(winner_loser_data, file = "afl/data/winner_loser_data.csv")
+write_csv(winner_loser_data, "afl/data/winner_loser_data.csv")
