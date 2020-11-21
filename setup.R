@@ -30,6 +30,14 @@ library(ggrunoff) # Install using devtools::install_github("hendersontrent/ggrun
 
 options(scipen = 999)
 
+# Create a data folder for each topic if none exists:
+
+if(!dir.exists('afl/data')) dir.create('afl/data')
+if(!dir.exists('nrl/data')) dir.create('nrl/data')
+if(!dir.exists('brownlow-forecasts/data')) dir.create('brownlow-forecasts/data')
+if(!dir.exists('election-forecasts/data')) dir.create('election-forecasts/data')
+if(!dir.exists('politics/data')) dir.create('politics/data')
+
 # Create an output folder for each topic if none exists:
 
 if(!dir.exists('afl/output')) dir.create('afl/output')
