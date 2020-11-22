@@ -6,8 +6,8 @@
 
 brownlow-forecasts/*
 
-data/*.Rda
-data/*.xlsx
-data/*.csv
-data/*.rda
-data/*.xls
+afl/data/*
+nrl/data/*
+election-forecasts/data/*
+brownlow-forecasts/data/*
+politics/data/*

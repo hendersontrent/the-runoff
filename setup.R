@@ -24,11 +24,27 @@ library(sjPlot)
 library(caTools)
 library(rstan)
 library(bayesplot)
+library(plotly)
 library(ggrunoff) # Install using devtools::install_github("hendersontrent/ggrunoff")
 
 # Turn off scientific notation
 
 options(scipen = 999)
+
+# Load functions
+
+files <- list.files("R", full.names = TRUE, pattern = "\\.[Rr]")
+for(f in files){
+  source(f)
+}
+
+# Create a data folder for each topic if none exists:
+
+if(!dir.exists('afl/data')) dir.create('afl/data')
+if(!dir.exists('nrl/data')) dir.create('nrl/data')
+if(!dir.exists('brownlow-forecasts/data')) dir.create('brownlow-forecasts/data')
+if(!dir.exists('election-forecasts/data')) dir.create('election-forecasts/data')
+if(!dir.exists('politics/data')) dir.create('politics/data')
 
 # Create an output folder for each topic if none exists:
 
