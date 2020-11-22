@@ -86,8 +86,7 @@ winner_loser_data <- tmp1 %>%
             uncontested_possessions = sum(uncontested_possessions),
             contested_marks = sum(contested_marks),
             marks_inside_50 = sum(marks_inside_50),
-            bounces = sum(bounces),
-            goal_assists = sum(goal_assists)) %>%
+            bounces = sum(bounces)) %>%
   ungroup() %>%
   dplyr::select(-c(season, round))
 

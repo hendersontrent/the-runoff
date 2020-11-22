@@ -53,3 +53,11 @@ if(!dir.exists('nrl/output')) dir.create('nrl/output')
 if(!dir.exists('brownlow-forecasts/output')) dir.create('brownlow-forecasts/output')
 if(!dir.exists('election-forecasts/output')) dir.create('election-forecasts/output')
 if(!dir.exists('politics/output')) dir.create('politics/output')
+
+# Create a manuscripts folder for each topic if none exists:
+
+if(!dir.exists('afl/manuscripts')) dir.create('afl/manuscripts')
+if(!dir.exists('nrl/manuscripts')) dir.create('nrl/manuscripts')
+if(!dir.exists('brownlow-forecasts/manuscripts')) dir.create('brownlow-forecasts/manuscripts')
+if(!dir.exists('election-forecasts/manuscripts')) dir.create('election-forecasts/manuscripts')
+if(!dir.exists('politics/manuscripts')) dir.create('politics/manuscripts')

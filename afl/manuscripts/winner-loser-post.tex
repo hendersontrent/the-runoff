@@ -1,0 +1,49 @@
+\documentclass{article}
+\usepackage{hyperref}
+
+\begin{document}
+
+\title{What separates winning versus losing teams in the AFL?}
+\author{Trent Henderson}
+
+\maketitle
+
+\begin{abstract}
+There is a lot of discourse and opinion on the factors that contribute to a team winning an AFL game. However, extensive, granular data exists, which can enable an more rigorous and statistically-sound exploration of these factors. Using player-level data from the past decade of AFL seasons, we take a statistical and machine learning look at what defines winners versus losers in regular season games.
+\end{abstract}
+
+\section{Introduction}
+Have you ever wondered 
+
+\subsection{Data sources}
+This analysis uses game data from \href{https://afltables.com/afl/afl_index.html}{AFL Tables} and \href{https://www.footywire.com/}{FootyWire}, pulled using the R package \href{https://github.com/jimmyday12/fitzRoy}{fitzRoy}.
+
+\section{Methodology and Results}
+Our methodology involved first aggregating the data to team/match-level. This avoids conflation of player-level differences. To do this, we filtered out all games that were finals - as other \href{https://www.orbisantanalytics.com/sport-esports}{research} has highlighted the inherent differences in finals footy compared to regular season games. The remaining data was then summed to team/match-level by aggregating over season, round, and whether the team won or not.
+
+\subsection{Correlations between game metrics}
+First, correlations between the relevant game metrics were calculated agnostic of match outcome. These can be interactively viewed in the graph below. The metrics were hierarchically clustered prior to plotting to aid interpretability and pattern recognition. We can see a few key relationships here:
+
+\begin{itemize}
+  \item Contested possessions, tackles, and clearances are moderately negatively associated with marks
+  \item Uncontested possessions and handballs are moderately positively associated
+  \item Uncontested possessions and marks are moderately positively associated
+  \item Clangers and bounces are moderately negatively associated
+\end{itemize}
+
+\textit{NOTE: Ignore the perfect correlation between free kicks for and free kicks against. These are equivalent to each other at a match-level aggregation. They were included to explore correlations between them and other metrics.}
+
+\textbf{\textit{Correlogram plot here}}
+
+\subsection{Predicting game winners}
+The analysis was taken a step further to a prediction-based model. A machine learning technique - \href{https://en.wikipedia.org/wiki/Random_forest}{Random forest} classification - was fit to the data to explore what predicts a team winning or losing a game. The variables from the correlogram above were entered in as predictors except for \textit{goals}, \textit{behinds}, and \textit{goal assists} - as these of course form the raw scores that determine a winner/loser. The random forest algorithm then fits a series of decision trees to determine a logical method that best predicts the outcome. The graph below shows a sample of one of the trees in the model to illustrate how this works. Note that the variables were scaled prior to modelling, so the numbers on the plot do not directly correspond to counts from games.
+
+\textbf{\textit{Decision tree plot here}}
+
+To validate the model, 20 per cent of the dataset was held-out from model training to assess its classification accuracy. The model correctly predicted 90 per cent of outcomes in the validation set. This is a very strong result - but perhaps unsurprising given the sheer volume of metrics used as inputs. What is potentially more interesting, is how important each variable is in the model. The table below shows the variable importance outputs.
+
+\textbf{\textit{Variable importance table here}}
+
+Perhaps unsurprisingly, marks inside 50 is the most importance predictor in the model. Free kicks for is the least important predictor. Interestingly, free kicks against is a much more important variable than free kicks for. Inside 50s and kicks are also very important variables that predict a team's chance of winning or losing - the rest are much less important in comparison.
+
+\end{document}

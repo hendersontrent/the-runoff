@@ -21,6 +21,7 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.tree import export_graphviz
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
+from sklearn.metrics import accuracy_score
 
 #------------------------ Preprocessing ----------------------------
 
@@ -63,19 +64,55 @@ model.fit(X_train, y_train.ravel())
 
 #------------------------ Model accuracy and validation ------------
 
+# Predictions
+
 y_pred = model.predict(X_test)
+print(accuracy_score(y_test, y_pred))
+
+#--------------------
+# Variable importance
+#--------------------
+
+# Calculations
+
+X_names = d.drop('did_i_win', axis = 1)
+raw_importance = pd.Series(model.feature_importances_, index = X_names.columns)
+raw_importance = pd.DataFrame(data = raw_importance)
+raw_importance.reset_index(inplace = True)
+importance_table = raw_importance.rename(columns = {'index': 'Variable'})
+importance_table = importance_table.rename(columns = { importance_table.columns[1]: "Importance" })
+importance_table = importance_table.sort_values(by = ['Importance'], ascending = False)
+
+# Clean up variable names
+
+importance_table['Variable'] = importance_table.Variable.str.title()
+importance_table['Variable'] = importance_table.Variable.replace("_", " ")
+
+# DataFrame to HTML table for website
+
+def table_to_runoff_pal(val):
+    color = '#FF686B' if val < 0.1 else '#93E1D8'
+    return 'color: %s' % color
+
+importance_html = importance_table.style.applymap(table_to_runoff_pal, subset = ['Importance']).render()
+with open('/Users/trenthenderson/Documents/Git/the-runoff/afl/output/variable-importance.html', 'w') as f:
+    f.write(importance_html)
 
 #------------------------ Data visualisation -----------------------
 
 # Build a decision tree plot
+
 tree_to_plot = model.estimators_[5]
 tree_dot = export_graphviz(tree_to_plot, out_file = None,
                            feature_names = feature_list, class_names = ['Lose', 'Win'],
                            rounded = True,filled = True,precision = 2)
 
 # Pull the dot file into a graph format
+
 graph = pydotplus.graph_from_dot_data(tree_dot)
+
 # Set up The Runoff colour palette
+
 colours = ('#FF686B', '#93E1D8')
 edges = collections.defaultdict(list)
 
@@ -89,4 +126,5 @@ for edge in edges:
         dest.set_fillcolor(colours[i])
 
 # Render as PNG
-graph.write_png("../afl/output/winner-loser-tree-plot.png")
+
+graph.write_png("/Users/trenthenderson/Documents/Git/the-runoff/afl/output/winner-loser-tree-plot.png")
