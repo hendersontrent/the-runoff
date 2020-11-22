@@ -1,14 +1,14 @@
 #------------------------------------------
 # This script sets out to pull the data
-# needed for a classification algorithm and
-# prep it for modelling
+# needed for a a clustermap of metrics that
+# feed the 
 #
 # NOTE: This script requires setup.R to
 # have been run first
 #------------------------------------------
 
 #------------------------------------------
-# Author: Trent Henderson, 21 November 2020
+# Author: Trent Henderson, 22 November 2020
 #------------------------------------------
 
 #' Define a reusable function
@@ -53,26 +53,17 @@ season_2020 <- pull_afl_data(start_date = "2020-01-01", end_date = "2020-12-01")
 tmp1 <- bind_rows(season_2011, season_2012, season_2013, season_2014, season_2015,
                   season_2016, season_2017, season_2018, season_2019, season_2020)
 
-# Compute winner binary variable and retain only variables of interest
-# by summing over each game. Removes goals and behinds as this will obviously
-# be associated with the game outcome
+# Aggregate data to match level
 
 the_finals <- c("EF", "SF", "QF", "PF", "GF") # Removes finals as these might bias analysis
 
-winner_loser_data <- tmp1 %>%
+clustermap_data <- tmp1 %>%
   filter(round %ni% the_finals) %>%
-  mutate(winner = case_when(
-    home_score > away_score ~ home_team,
-    away_score > home_score ~ away_team,
-    TRUE                    ~ "Remove")) %>%
-  filter(winner != "Remove") %>%
-  mutate(did_i_win = case_when(
-    playing_for == winner ~ 1,
-    TRUE                  ~ 0)) %>%
-  mutate(did_i_win = as.factor(did_i_win)) %>%
-  group_by(season, round, did_i_win) %>%
+  group_by(season, round, home_team) %>%
   summarise(kicks = sum(kicks),
             marks = sum(marks),
+            goals = sum(goals),
+            behinds = sum(behinds),
             handballs = sum(handballs),
             hit_outs = sum(hit_outs),
             tackles = sum(tackles),
@@ -89,8 +80,22 @@ winner_loser_data <- tmp1 %>%
             bounces = sum(bounces),
             goal_assists = sum(goal_assists)) %>%
   ungroup() %>%
-  dplyr::select(-c(season, round))
+  dplyr::select(-c(season, round, home_team))
 
-#---------------------- Save data for use --------------------------
+# Compute correlation matrix
 
-write_csv(winner_loser_data, "afl/data/winner_loser_data.csv")
+corr <- round(cor(clustermap_data), 2)
+
+my_plot <- ggcorrplot::ggcorrplot(corr, hc.order = TRUE, colors = c("#2274A5", "white", "#FF686B")) +
+  labs(title = "Correlogram of match-level sums")
+
+#---------------------- Export plot --------------------------------
+
+CairoPNG("afl/output/correlogram.png", 600, 600)
+print(my_plot)
+dev.off()
+
+# Turn into interactive object and save as HTML to embed in website
+
+heatmap_plot <- ggplotly(my_plot)
+htmlwidgets::saveWidget(as_widget(heatmap_plot), "afl/output/heatmap-plot.html")

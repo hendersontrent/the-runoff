@@ -24,11 +24,19 @@ library(sjPlot)
 library(caTools)
 library(rstan)
 library(bayesplot)
+library(plotly)
 library(ggrunoff) # Install using devtools::install_github("hendersontrent/ggrunoff")
 
 # Turn off scientific notation
 
 options(scipen = 999)
+
+# Load functions
+
+files <- list.files("R", full.names = TRUE, pattern = "\\.[Rr]")
+for(f in files){
+  source(f)
+}
 
 # Create a data folder for each topic if none exists:
 

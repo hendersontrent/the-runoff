@@ -89,4 +89,4 @@ for edge in edges:
         dest.set_fillcolor(colours[i])
 
 # Render as PNG
-graph.write_png("..afl/output/winner-loser-tree-plot.png")
+graph.write_png("../afl/output/winner-loser-tree-plot.png")
