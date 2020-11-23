@@ -59,16 +59,69 @@ tmp1 <- bind_rows(season_2011, season_2012, season_2013, season_2014, season_201
 
 the_finals <- c("EF", "SF", "QF", "PF", "GF") # Removes finals
 
-tmp2 <- tmp1 %>%
-  filter(round %ni% the_finals)
-
 #---------------------- Get data in aggregated form ----------------
 
 #------------------
 # Grand Finalists
 #------------------
 
+extract_gf_winners <- function(season_year){
+  
+  tmp2 <- tmp1 %>%
+    filter(season != 2020) # Remove COVID year
+    
+    # Previous year's GF data
+    
+    tmp3 <- tmp2 %>%
+      filter(season == season_year - 1) %>%
+      filter(round == "GF") %>%
+      dplyr::select(c(season, round, home_score, away_score, home_team, away_team)) %>%
+      distinct() %>%
+      mutate(gf_winner = case_when(
+        home_score > away_score ~ home_team,
+        away_score > home_score ~ away_team)) %>%
+      dplyr::select(c(gf_winner))
+    
+    # Following year's first game
+    
+    tmp4 <- tmp1 %>%
+      filter(season == season_year) %>%
+      filter(round == 1) %>%
+      dplyr::select(c(season, round, home_score, away_score, home_team, away_team)) %>%
+      distinct() %>%
+      mutate(winner = case_when(
+        home_score > away_score ~ home_team,
+        away_score > home_score ~ away_team)) %>%
+      dplyr::select(c(winner))
+    
+    tmp5 <- data.frame(season = c(season_year)) %>%
+      mutate(did_gf_winner_win = case_when(
+             unique(tmp3$gf_winner) %in% unique(tmp4$winner) ~ "GF winner won",
+             unique(tmp3$gf_winner) %ni% unique(tmp4$winner) ~ "GF winner did not win"))
+  
+  # Return summarised data
+  
+  return(tmp5)
+}
 
+gf_winners_2012 <- extract_gf_winners(season_year = 2012)
+gf_winners_2013 <- extract_gf_winners(season_year = 2013)
+gf_winners_2014 <- extract_gf_winners(season_year = 2014)
+gf_winners_2015 <- extract_gf_winners(season_year = 2015)
+gf_winners_2016 <- extract_gf_winners(season_year = 2016)
+gf_winners_2017 <- extract_gf_winners(season_year = 2017)
+gf_winners_2018 <- extract_gf_winners(season_year = 2018)
+gf_winners_2019 <- extract_gf_winners(season_year = 2019)
+
+gf_probs <- bind_rows(gf_winners_2012, gf_winners_2013, gf_winners_2014,
+                      gf_winners_2015, gf_winners_2016, gf_winners_2017,
+                      gf_winners_2018, gf_winners_2019) %>%
+  group_by(did_gf_winner_win) %>%
+  summarise(counter = n()) %>%
+  ungroup() %>%
+  mutate(props = round((counter / sum(counter))*100, digits = 2)) %>%
+  filter(did_gf_winner_win == "GF winner won") %>%
+  dplyr::select(-c(counter))
 
 #-------------------------------
 # General home team probability
@@ -80,7 +133,8 @@ extract_home_probs <- function(){
   
   # Aggregate data
   
-  tmp3 <- tmp2 %>%
+  tmp2 <- tmp1 %>%
+    filter(round %ni% the_finals) %>%
     filter(season >= 2015) # Just last 5 seasons ignoring 2020 due to COVID
   
   # Compute each team and bind together
@@ -89,7 +143,7 @@ extract_home_probs <- function(){
   empty_list <- list()
   
   for(a in all_teams){
-    tmp4 <- tmp3 %>%
+    tmp4 <- tmp2 %>%
       filter(home_team == a) %>%
       dplyr::select(c(season, round, home_score, away_score)) %>%
       distinct() %>%
