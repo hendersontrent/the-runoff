@@ -5,7 +5,7 @@
 #------------------------------------------
 
 #------------------------------------------
-# Author: Trent Henderson, 11 November 2020
+# Author: Trent Henderson, 21 November 2020
 #------------------------------------------
 
 # Load packages
@@ -24,6 +24,9 @@ library(sjPlot)
 library(caTools)
 library(rstan)
 library(bayesplot)
+library(bnlearn)
+library(bnviewer)
+library(readxl)
 library(plotly)
 library(ggrunoff) # Install using devtools::install_github("hendersontrent/ggrunoff")
 
