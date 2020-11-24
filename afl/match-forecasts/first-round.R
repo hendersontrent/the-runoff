@@ -153,7 +153,7 @@ extract_home_probs <- function(){
       group_by(season, winner) %>%
       summarise(counter = n()) %>%
       group_by(season) %>%
-      mutate(props = round((counter / sum(counter))*100, digits = 2)) %>%
+      mutate(props = round(counter / sum(counter), digits = 2)) %>%
       ungroup() %>%
       filter(winner == "Home Win") %>%
       mutate(home_team = a) %>%
@@ -180,12 +180,13 @@ CairoPNG("afl/output/home-team-win-probs.png", 800, 600)
 home_probs %>%
   ggplot() +
   geom_point(aes(x = reorder(home_team, avg), y = avg), stat = "identity", size = 5) +
-  geom_segment(aes(x = home_team, xend = home_team, y = (avg + 2*sd), yend = (avg - 2*sd)), alpha = 0.5, size = 3) +
+  geom_segment(aes(x = home_team, xend = home_team, y = (avg + sd), yend = (avg - sd)), alpha = 0.5, size = 3) +
   labs(title = "Home team win probability over the 2015-2019 seasons",
-       subtitle = "Shaded bars indicate +- 2 SD regions.",
+       subtitle = "Shaded bars indicate +- 1 SD regions.",
        x = "Team",
        y = "Home Team Win Probability") +
-  scale_y_continuous(labels = function(x)paste0(x,"%")) +
+  scale_y_continuous(limits = c(0,1),
+                     breaks = c(0,0.2,0.4,0.6,0.8,1)) +
   coord_flip() +
   theme_runoff()
 dev.off()

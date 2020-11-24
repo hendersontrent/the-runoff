@@ -28,6 +28,7 @@ library(bnlearn)
 library(bnviewer)
 library(readxl)
 library(plotly)
+library(tidyLPA)
 library(ggrunoff) # Install using devtools::install_github("hendersontrent/ggrunoff")
 
 # Turn off scientific notation
