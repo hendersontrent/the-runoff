@@ -55,21 +55,29 @@ player_data <- tmp1 %>%
   group_by(player_name, playing_for) %>%
   summarise(kicks = mean(kicks),
             marks = mean(marks),
-            goals = mean(goals),
-            behinds = mean(behinds),
-            contested_possessions = mean(contested_possessions),
             contested_marks = mean(contested_marks),
-            inside_50s = mean(inside_50s),
-            clearances = mean(clearances),
+            contested_possessions = mean(contested_possessions),
             handballs = mean(handballs)) %>%
   ungroup()
+
+# Identify just top 200 players with highest sum averages
+
+top_player_data <- player_data %>%
+  mutate(combined = kicks + marks + handballs + contested_marks + contested_possessions) %>%
+  top_n(100, combined) %>%
+  dplyr::select(c(player_name, playing_for, combined))
+
+player_data <- player_data %>%
+  left_join(top_player_data, by = c("player_name" = "player_name",
+                                    "playing_for" = "playing_for")) %>%
+  drop_na()
 
 player_data <- mutate(player_data, id = rownames(player_data)) # Helps with LPA merge
 
 #----------------------- Run the LPA -------------------------------
 
 m1 <- player_data %>%
-  dplyr::select(-c(id, player_name, playing_for)) %>%
+  dplyr::select(-c(id, player_name, playing_for, combined)) %>%
   single_imputation() %>%
   estimate_profiles(1:6,
                     variances = c("equal", "varying"),
@@ -86,10 +94,10 @@ m1 %>%
 
 lpa_outputs <- get_data(m1)
 
-# Filter to just Model 6/Classes 5 as this model had the best analytic hierarchy
+# Filter to just Model 1/Classes 6 as this model had the best analytic hierarchy
 
 lpa_outputs_filt <- lpa_outputs %>%
-  filter(model_number == "6" & classes_number == 5)
+  filter(model_number == "1" & classes_number == 6)
 
 # Join back in to main dataset and retain just the class for each player
 # that has the highest probability
@@ -97,50 +105,97 @@ lpa_outputs_filt <- lpa_outputs %>%
 final_profiles <- player_data %>%
   mutate(id = as.integer(id)) %>%
   inner_join(lpa_outputs_filt, by = c("id" = "id", "kicks" = "kicks", "marks" = "marks",
-                                      "goals" = "goals", "behinds" = "behinds",
-                                      "contested_possessions" = "contested_possessions", 
-                                      "contested_marks" = "contested_marks",
-                                      "inside_50s" = "inside_50s", 
-                                      "clearances" = "clearances",
-                                      "handballs" = "handballs")) %>%
+                                      "handballs" = "handballs", "contested_marks" = "contested_marks",
+                                      "contested_possessions" = "contested_possessions")) %>%
   group_by(id) %>%
   slice(which.max(Probability)) %>%
   ungroup() %>%
   mutate(Class = as.factor(Class)) %>%
+  mutate(player_name = make.unique(player_name, sep = "_")) %>% # Some players have the same name
   dplyr::select(-c(id, model_number, classes_number, Class_prob, Probability))
+
+#----------------------- Correlations between players --------------
+
+# Get list of all pairwise player combinations
+
+pairwise_list <- expand.grid(from = final_profiles$player_name, to = final_profiles$player_name) %>%
+  filter(from != to)
+
+# Compute correlations
+
+empty_list <- list()
+
+for(r in 1:nrow(pairwise_list)){
+  tmp_players <- pairwise_list[r,]
+    
+  player_from <- final_profiles %>%
+    filter(player_name == tmp_players$from)
+  
+  player_to <- final_profiles %>%
+    filter(player_name == tmp_players$to)
+  
+  player_from_vector <- c(player_from$kicks, player_from$marks, player_from$handballs,
+                          player_from$contested_marks, player_from$contested_possessions)
+  player_to_vector <- c( player_to$kicks,  player_to$marks,  player_to$handballs,
+                         player_to$contested_marks,  player_to$contested_possessions)
+  
+  if(length(player_from_vector) != length(player_to_vector)){
+    stop("Error: Vectors are not equal lengths.")
+  } else{
+      
+    the_corr <- data.frame(from = c(unique(player_from$player_name)),
+                           to = c(unique(player_to$player_name)),
+                           value = c(cor(player_from_vector, player_to_vector)))
+    
+    empty_list[[r]] <- the_corr
+  }
+}
+
+pairwise_correlations <- rbindlist(empty_list, use.names = TRUE) %>%
+  mutate(value_indicator = case_when(
+         value >= -0.7 & value <= 0.7 ~ "Drop",
+         value < -0.7                 ~ "Keep",
+         value > 0.7                  ~ "Keep")) %>%
+  filter(value_indicator == "Keep") %>% # Removes small and moderate correlations to keep network edges manageable
+  dplyr::select(-c(value_indicator))
 
 #----------------------- Data visualisation ------------------------
 
 # Requires nodes and edges
 
 nodes <- final_profiles %>%
-  dplyr::select(c(player_name, Class)) %>%
+  mutate(title = paste0("<p><b>",player_name,"</b><br>","Group = ",Class,"</p>")) %>% # HTML label for interactive hover
+  dplyr::select(c(player_name, Class, title, combined)) %>%
+  mutate(combined = round(rescale(combined, to = c(0,1)), digits = 3)) %>% # Rescale to make nodes a good size on network diagram
   rename(id = player_name,
-         group = Class) %>% # Renames into variables required for JavaScript library
-  mutate(group = as.factor(group)) %>%
-  mutate(id = make.unique(id, sep = "_")) # Some players have the same name
+         group = Class,
+         value = combined) %>% # Renames into variables required for JavaScript library
+  mutate(group = as.factor(group))
 
-edges <- expand.grid(from = nodes$id, to = nodes$id) %>%
-  filter(from != to)
-
-sample_size <- floor(0.0005 * nrow(edges))
-set.seed(123)
-train_ind <- sample(seq_len(nrow(edges)), size = sample_size)
-train <- edges[train_ind,]
+edges <- pairwise_correlations %>%
+  dplyr::select(-c(value))
 
 #-------------------
 # Make network graph
 #-------------------
 
-vis.nodes <- nodes
-vis.nodes$shadow <- TRUE # Nodes will drop shadow
-vis.nodes$title  <- vis.nodes$id # Text on click
-
-visNetwork(vis.nodes, train, width = "100%",
-           main = "Network diagram of AFL players", submain = paste0("Random subset of ",sample_size," pairwise player combinations")) %>% 
+player_network_diag <- visNetwork(nodes, edges, height = "1000px", width = "100%",
+           main = "Network diagram of the top 100 AFL players over the past 5 seasons on core metrics",
+           submain = "Groups determined by probabilistic Latent Profile Analysis of average kicks, marks, handballs, contested marks and\ncontested possessions. Node size = Sum of all metric averages.\nEdge size = average correlation between players. Correlations < +- 0.7 were filtered out for visual clarity.",
+           footer = "Source: CRAN package fitzRoy which pulls data from www.afltables.com and www.footywire.com") %>% 
   visIgraphLayout(layout = "layout_nicely") %>%
   visGroups(groupname = "1", color = "#A09BE7") %>% 
   visGroups(groupname = "2", color = "#FF686B") %>%
   visGroups(groupname = "3", color = "#861657") %>% 
   visGroups(groupname = "4", color = "#93E1D8") %>%
-  visGroups(groupname = "5", color = "#2274A5")
+  visGroups(groupname = "5", color = "#2274A5") %>% 
+  visGroups(groupname = "6", color = "#FEB06A") %>%
+  visLegend() %>%
+  visOptions(selectedBy = "group", 
+             highlightNearest = TRUE, 
+             nodesIdSelection = TRUE) %>%
+  visPhysics(stabilization = FALSE)
+
+# Save to HTML
+
+visSave(player_network_diag, file = "afl/output/player_network_diag.html")
