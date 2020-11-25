@@ -151,11 +151,13 @@ for(r in 1:nrow(pairwise_list)){
   }
 }
 
+cutoff <- 0.7
+
 pairwise_correlations <- rbindlist(empty_list, use.names = TRUE) %>%
   mutate(value_indicator = case_when(
-         value >= -0.7 & value <= 0.7 ~ "Drop",
-         value < -0.7                 ~ "Keep",
-         value > 0.7                  ~ "Keep")) %>%
+         value >= -cutoff & value <= cutoff ~ "Drop",
+         value < -cutoff                    ~ "Keep",
+         value > cutoff                     ~ "Keep")) %>%
   filter(value_indicator == "Keep") %>% # Removes small and moderate correlations to keep network edges manageable
   dplyr::select(-c(value_indicator))
 
@@ -170,7 +172,9 @@ nodes <- final_profiles %>%
   rename(id = player_name,
          group = Class,
          value = combined) %>% # Renames into variables required for JavaScript library
-  mutate(group = as.factor(group))
+  mutate(group = as.factor(group),
+         font.color = "white", # Node labels on plot
+         font.size = 30) # Font size needs to be bigger on plot
 
 edges <- pairwise_correlations %>%
   dplyr::select(-c(value))
@@ -181,12 +185,15 @@ edges <- pairwise_correlations %>%
 
 player_network_diag <- visNetwork(nodes, edges, height = "1000px", width = "100%",
            main = "Network diagram of core metrics between the top 100 AFL players on average on these metrics over the past 5 seasons",
-           submain = "<br>Groups determined by probabilistic Latent Profile Analysis of average kicks, marks, handballs, contested marks and<br>contested possessions. Node size = Sum of all metric averages.<br>Edge size = average correlation between players. Correlations < +- 0.7 were filtered out for visual clarity.",
-           footer = "Source: CRAN package fitzRoy which pulls data from www.afltables.com and www.footywire.com") %>% 
-  visIgraphLayout(layout = "layout_nicely") %>%
+           submain = "<br>Groups determined by probabilistic Latent Profile Analysis of average kicks, marks, handballs, contested marks and<br>contested possessions. Node size = Sum of all metric averages.<br>Edge size = average correlation between players. Correlations < +- 0.8 were filtered out for visual clarity.",
+           footer = "Source: CRAN package fitzRoy which pulls data from www.afltables.com and www.footywire.com",
+           background = "#E9EAE0") %>% 
+  visIgraphLayout(layout = "layout_nicely",
+                  smooth = FALSE,
+                  randomSeed = 123) %>%
   visGroups(groupname = "1", color = "#A09BE7") %>% 
   visGroups(groupname = "2", color = "#FF686B") %>%
-  visGroups(groupname = "3", color = "#861657") %>% 
+  visGroups(groupname = "3", color = "#FFA3B8") %>% 
   visGroups(groupname = "4", color = "#93E1D8") %>%
   visGroups(groupname = "5", color = "#2274A5") %>% 
   visGroups(groupname = "6", color = "#FEB06A") %>%
