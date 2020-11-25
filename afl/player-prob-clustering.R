@@ -180,8 +180,8 @@ edges <- pairwise_correlations %>%
 #-------------------
 
 player_network_diag <- visNetwork(nodes, edges, height = "1000px", width = "100%",
-           main = "Network diagram of the top 100 AFL players over the past 5 seasons on core metrics",
-           submain = "Groups determined by probabilistic Latent Profile Analysis of average kicks, marks, handballs, contested marks and\ncontested possessions. Node size = Sum of all metric averages.\nEdge size = average correlation between players. Correlations < +- 0.7 were filtered out for visual clarity.",
+           main = "Network diagram of core metrics between the top 100 AFL players on average on these metrics over the past 5 seasons",
+           submain = "<br>Groups determined by probabilistic Latent Profile Analysis of average kicks, marks, handballs, contested marks and<br>contested possessions. Node size = Sum of all metric averages.<br>Edge size = average correlation between players. Correlations < +- 0.7 were filtered out for visual clarity.",
            footer = "Source: CRAN package fitzRoy which pulls data from www.afltables.com and www.footywire.com") %>% 
   visIgraphLayout(layout = "layout_nicely") %>%
   visGroups(groupname = "1", color = "#A09BE7") %>% 
