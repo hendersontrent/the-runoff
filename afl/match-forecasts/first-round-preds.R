@@ -16,9 +16,25 @@ priors <- bind_rows(first_round_team_priors, first_round_other_priors)
 
 #---------------------- Pre processing -----------------------------
 
+# Fixtures
+
+fixtures <- data.frame(home_team = c("Richmond", "Collingwood", "Melbourne",
+                                     "Adelaide", "Essendon", "Brisbane Lions",
+                                     "North Melbourne", "Greater Western Sydney", "West Coast"),
+                       away_team = c("Carlton", "Western Bulldogs", "Fremantle",
+                                     "Geelong", "Hawthorn", "Sydney",
+                                     "Port Adelaide", "St Kilda", "Gold Coast")) %>%
+  mutate(season = 2021,
+         round = 1)
+
+# Create all the correct variables
+
 data <- tmp
 
+# Merge
 
+round_1 <- fixtures %>%
+  left_join(vars, by = c("home_team" = "home_team"))
 
 #---------------------- Run the model ------------------------------
 
@@ -72,3 +88,10 @@ system.time({
 #---------------------- Extract results for each fixture -----------
 
 # MAC HAS SOMETHING HERE!!!
+
+
+
+# Potentially compute proportions of "win" assignments over all simulations
+# by fixture?
+
+

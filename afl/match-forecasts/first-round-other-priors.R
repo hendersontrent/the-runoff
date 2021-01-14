@@ -10,7 +10,7 @@
 
 # Pull data all the way back to 2001
 
-years <- c(seq(from = 2001, to = 2019, by = 1))
+years <- c(seq(from = 2001, to = 2020, by = 1))
 store <- list()
 
 for(i in years){
@@ -54,6 +54,7 @@ ladder_list <- list()
 prep_ladder <- function(){
   
   ladders <- data_2 %>%
+    filter(season != 2020) %>%
     filter(round %ni% c("EF", "GF", "PF", "QF", "SF")) # Remove finals
   
   for(i in teams){
@@ -92,11 +93,54 @@ prep_ladder <- function(){
   
   ladder_all_teams <- rbindlist(ladder_list, use.names = TRUE)  %>%
     group_by(season) %>%
-    mutate(ladder_pos = dense_rank(pts)) %>%
+    mutate(ladder_pos = dense_rank(-pts)) %>%
     ungroup()
   
-  first_rounds <- data_2 %>%
-    filter(round == "1")
+  # Wrangle data in lag format
+  
+  seasons <- unique(ladder_all_teams$season)
+  calc_list <- list()
+  
+  for(i in teams){
+    
+    for(s in seasons){
+      
+      s_plus <- s+1
+      
+      first_round <- data_2 %>%
+        filter(round == "1") %>%
+        filter(season == s_plus) %>%
+        filter(home_team == i | away_team == i)
+      
+      if(nrow(first_round) < 1){
+        
+        tmp_all <- data.frame(team = c(i),
+                              season = c(s),
+                              ladder_pos = c("NA"),
+                              outcome = c("NA"))
+      } else{
+      
+        first_round <- first_round %>%
+          mutate(outcome = case_when(
+            home_team == i & outcome == "Home Win" ~ "Win",
+            home_team == i & outcome == "Away Win" ~ "Loss",
+            outcome == "Draw"                      ~ "Draw",
+            away_team == i & outcome == "Home Win" ~ "Loss",
+            away_team == i & outcome == "Away Win" ~ "Win")) %>%
+          dplyr::select(c(outcome))
+        
+        prior_season <- ladder_all_teams %>%
+          filter(team == i) %>%
+          filter(season == s) %>%
+          dplyr::select(c(team, season, ladder_pos))
+        
+        joined <- cbind(prior_season, first_round)
+      }
+    }
+    calc_list[[i]] <- joined
+  }
+  
+  ladder_final <- rbindlist(calc_list, use.names = TRUE)
   
   return(ladder_final)
 }
@@ -112,6 +156,7 @@ won_gf <- data_2
 # Home Team
 
 home_team <- data_2 %>%
+  filter(season != 2020) %>%
   group_by(season, outcome) %>%
   summarise(counter = n()) %>%
   group_by(season) %>%
