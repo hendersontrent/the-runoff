@@ -9,6 +9,11 @@
 # Author: Trent Henderson, 14 January 2021
 #------------------------------------------
 
+load("afl/data/first_round_team_priors.Rda")
+load("afl/data/first_round_other_priors.Rda")
+
+priors <- bind_rows(first_round_team_priors, first_round_other_priors)
+
 #---------------------- Pre processing -----------------------------
 
 data <- tmp
