@@ -48,56 +48,75 @@ data_1 <- all_seasons %>%
            home_score < away_score  ~ "Away Win",
            home_score == away_score ~ "Draw"))
 
+# Loop over each team to summarise matches played in a consistent 1 column way
+
+teams <- unique(data_1$home_team)
+matches <- list()
+
+for(i in teams){
+    
+    # Filter data
+    
+    tmp_home <- data_1 %>%
+        filter(home_team == i) %>%
+        mutate(outcome = case_when(
+               outcome == "Home Win" ~ "Win",
+               outcome == "Away Win" ~ "Loss",
+               outcome == "Draw"     ~ "Draw")) %>%
+        mutate(team = i) %>%
+        dplyr::select(season, round, team, outcome)
+    
+    tmp_away <- data_1 %>%
+        filter(away_team == i) %>%
+        mutate(outcome = case_when(
+            outcome == "Home Win" ~ "Loss",
+            outcome == "Away Win" ~ "Win",
+            outcome == "Draw"     ~ "Draw")) %>%
+        mutate(team = i) %>%
+        dplyr::select(season, round, team, outcome)
+    
+    tmp_all <- bind_rows(tmp_home, tmp_away)
+    
+    matches[[i]] <- tmp_all
+}
+
+match_sum <- rbindlist(matches, use.names = TRUE) %>%
+    mutate(outcome = factor(outcome, levels = c("Loss", "Draw", "Win")))
+
 #---------------------- Fit statistical models ---------------------
 
 # Need to get priors for the following variables:
 #   - team
-#   - ladder
-#   - finals
-#   - won_gf
-#   - home_team
 
 #--------------
 # MODEL 1: TEAM
 #--------------
 
-# Run a model looping over each team
+# Run a basic model
 
-teams <- unique(data_1$home_team)
-mod_1 <- list()
-
-for(i in team){
-    
-    # Filter data
-    
-    tmp_home <- data_1 %>%
-        filter(home_team == i)
-    
-    tmp_away <- data_1 %>%
-        filter(away_team == i)
-    
-    tmp <- bind_rows(tmp_home, tmp_away)
-    
-    # Fit model
-    
-    m <- something(outcome ~ team, 
-                   data = data_1)
-    
-    # Extract outputs
-    
-    mod_1[[i]] <- m
-}
-
-mod_1_outs <- rbindlist(mod_1, use.names = TRUE)
+m <- MASS::polr(outcome ~ 1 + team, data = match_sum, Hess = TRUE)
 
 #---------------------- Extract priors and save --------------------
 
-# Extraction (NEED 1 ROW PER VARIABLE!!!)
+mod_outs <- as.data.frame(summary(m)$coefficients)
 
-first_round_team_priors <- mod_1_outs %>%
-    group_by() %>% 
-    summarise() %>% 
+# Check distribution
+
+mod_outs %>%
+    ggplot(aes(x = Value)) +
+    geom_density(alpha = 0.4, colour = "black") +
+    labs(x = "Coefficient",
+         y = "Density")
+    scale_x_continuous(limits = c(-2,2.5)) +
+    theme_runoff(grids = TRUE)
+
+# Calculate mean and SD of coefficients
+
+first_round_team_priors <- mod_outs %>%
+    summarise(mu = mean(Value),
+              sd = sd(Value)) %>% 
     ungroup() %>% 
+    mutate(coefficient = "team") %>%
     dplyr::select(c(coefficient, mu, sd))
 
 # Save for import and use in predictive model

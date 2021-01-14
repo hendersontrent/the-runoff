@@ -52,7 +52,6 @@ data_2 <- all_seasons %>%
 #---------------------- Fit statistical models ---------------------
 
 # Need to get priors for the following variables:
-#   - team
 #   - ladder
 #   - finals
 #   - won_gf
