@@ -85,9 +85,6 @@ match_sum <- rbindlist(matches, use.names = TRUE) %>%
 
 #---------------------- Fit statistical models ---------------------
 
-# Need to get priors for the following variables:
-#   - team
-
 #--------------
 # MODEL 1: TEAM
 #--------------
@@ -106,7 +103,7 @@ mod_outs %>%
     ggplot(aes(x = Value)) +
     geom_density(alpha = 0.4, colour = "black") +
     labs(x = "Coefficient",
-         y = "Density")
+         y = "Density") +
     scale_x_continuous(limits = c(-2,2.5)) +
     theme_runoff(grids = TRUE)
 

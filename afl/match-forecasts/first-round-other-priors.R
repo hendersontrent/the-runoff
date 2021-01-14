@@ -34,12 +34,9 @@ all_seasons <- rbindlist(store, use.names = TRUE)
 # DATASET 2: OTHER VARIABLES
 #---------------------------
 
-# Need to filter out 2020 as it was an anomalous season (and had no proper home teams)
-# as we just want to fit a single statistical model with all these variables and not
-# one by one
+# High level aggregation
 
 data_2 <- all_seasons %>%
-  filter(season < 2020) %>%
   group_by(season, round, home_team, away_team) %>%
   summarise(home_score = mean(home_score),
             away_score = mean(away_score)) %>%
@@ -49,28 +46,75 @@ data_2 <- all_seasons %>%
     home_score < away_score  ~ "Away Win",
     home_score == away_score ~ "Draw"))
 
+# Ladder
+
+ladder <- data_2
+
+# Finals
+
+finals <- data_2
+
+# Won GF
+
+won_gf <- data_2
+
+# Home Team
+
+home_team <- data_2 %>%
+  group_by(season, outcome) %>%
+  summarise(counter = n()) %>%
+  group_by(season) %>%
+  mutate(probs = counter / sum(counter)) %>%
+  ungroup() %>%
+  filter(outcome == "Home Win") %>%
+  mutate(coefficient = "home_team") %>%
+  group_by(coefficient) %>%
+  summarise(mu = mean(probs),
+            sd = sd(probs)) %>%
+  ungroup()
+
 #---------------------- Fit statistical models ---------------------
 
-# Need to get priors for the following variables:
-#   - ladder
-#   - finals
-#   - won_gf
-#   - home_team
+#-------
+# ladder
+#-------
 
-#-------------------------
-# MODEL 2: OTHER VARIABLES
-#-------------------------
+
+
+#-------
+# finals
+#-------
+
+
+
+#-------
+# won_gf
+#-------
 
 
 
 #---------------------- Extract priors and save --------------------
 
-# Extraction (NEED 1 ROW PER VARIABLE!!!)
+mod_outs <- as.data.frame(summary(m)$coefficients)
 
-first_round_other_priors <- mod_2_outs %>%
-  group_by() %>% 
-  summarise() %>% 
+# Check distribution
+
+mod_outs %>%
+  ggplot(aes(x = Value)) +
+  geom_density(alpha = 0.4, colour = "black") +
+  labs(x = "Coefficient",
+       y = "Density") +
+  scale_x_continuous(limits = c(-2,2.5)) +
+  theme_runoff(grids = TRUE) +
+  facet_wrap(~coefficient)
+
+# Calculate mean and SD of coefficients
+
+first_round_other_priors <- mod_outs %>%
+  summarise(mu = mean(Value),
+            sd = sd(Value)) %>% 
   ungroup() %>% 
+  mutate(coefficient = "team") %>%
   dplyr::select(c(coefficient, mu, sd))
 
 # Save for import and use in predictive model
