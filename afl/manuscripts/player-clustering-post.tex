@@ -1,0 +1,47 @@
+\documentclass{article}
+\usepackage{hyperref}
+
+\begin{document}
+
+\title{How similar are the AFL's Top 100 players as measured by average game output?}
+\author{Trent Henderson}
+
+\maketitle
+
+\begin{abstract}
+T
+\end{abstract}
+
+\section{Introduction}
+H
+
+\subsection{Data sources}
+This analysis uses game data from \href{https://afltables.com/afl/afl_index.html}{AFL Tables} and \href{https://www.footywire.com/}{FootyWire}, pulled using the R package \href{https://github.com/jimmyday12/fitzRoy}{fitzRoy}.
+
+\section{Methodology and Results}
+Our methodology involved first aggregating the data to player-level averages for the entire season. We filtered out all games that were finals - as other \href{https://www.orbisantanalytics.com/sport-esports}{research} has highlighted the inherent differences in finals footy compared to regular season games. Averages were then calculated for 5 metrics that would likely apply to players of most positions:
+
+\begin{itemize}
+  \item Kicks
+  \item Handballs
+  \item Marks
+  \item Contested marks
+  \item Contested possessions
+\end{itemize}
+
+These averages were then summed and the top 100 players based on this summation were retained. This was done for two reasons:
+
+\begin{itemize}
+  \item To limit the number of nodes and edges to render in the below diagram as they increase exponentially with each player
+  \item The top 100 players likely contribute the most to team success and so would be of most immediate importance to understand
+\end{itemize}
+
+\subsection{Clustering of players}
+The metrics of the top 100 players were entered into a statistical probabilistic clustering model called \href{https://www.sciencedirect.com/science/article/pii/S0001879120300701}{Latent Profile Analysis (LPA)}. LPA was chosen over alternatives such as k-means cluster analysis due to a lack of an formalised view on a potential number of clusters. LPA allows for testing of multiple competing models and assigns each observation a probability of being in each of the computed clusters. The cluster with the highest probability is the most likely category of membership for a given player. This helps us provide some structure to data with multiple variables. 
+
+\subsection{Visualising relationships between players}
+T
+
+\textbf{\textit{Interactive network diagram here}}
+
+\end{document}
