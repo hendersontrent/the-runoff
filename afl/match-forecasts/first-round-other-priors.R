@@ -48,7 +48,58 @@ data_2 <- all_seasons %>%
 
 # Ladder
 
-ladder <- data_2
+teams <- unique(data_2$home_team)
+ladder_list <- list()
+
+prep_ladder <- function(){
+  
+  ladders <- data_2 %>%
+    filter(round %ni% c("EF", "GF", "PF", "QF", "SF")) # Remove finals
+  
+  for(i in teams){
+    
+    tmp_home <- ladders %>%
+      filter(home_team == i) %>%
+      mutate(outcome = case_when(
+             outcome == "Home Win" ~ "Win",
+             outcome == "Away Win" ~ "Loss",
+             outcome == "Draw"     ~ "Draw"))
+    
+    tmp_away <- ladders %>%
+      filter(away_team == i) %>%
+      mutate(outcome = case_when(
+        outcome == "Home Win" ~ "Loss",
+        outcome == "Away Win" ~ "Win",
+        outcome == "Draw"     ~ "Draw"))
+    
+    tmp_all <- bind_rows(tmp_home, tmp_away) %>%
+      mutate(team = i) %>%
+      group_by(team, season, outcome) %>%
+      summarise(counter = n()) %>%
+      ungroup() %>%
+      mutate(pts = case_when(
+             outcome == "Win"  ~ 4*counter,
+             outcome == "Draw" ~ 2*counter,
+             outcome == "Loss" ~ 0)) %>%
+      group_by(team, season) %>%
+      summarise(pts = sum(pts)) %>%
+      ungroup()
+    
+    ladder_list[[i]] <- tmp_all
+  }
+  
+  # Bind all together and rank ladder based on points for each season
+  
+  ladder_all_teams <- rbindlist(ladder_list, use.names = TRUE)  %>%
+    group_by(season) %>%
+    mutate(ladder_pos = dense_rank(pts)) %>%
+    ungroup()
+  
+  first_rounds <- data_2 %>%
+    filter(round == "1")
+  
+  return(ladder_final)
+}
 
 # Finals
 
