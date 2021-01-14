@@ -12,6 +12,12 @@ election-forecasts/data/*
 brownlow-forecasts/data/*
 politics/data/*
 
+afl/output/*
+nrl/output/*
+election-forecasts/output/*
+brownlow-forecasts/output/*
+politics/output/*
+
 afl/manuscripts/*.log
 nrl/manuscripts/*.log
 election-forecasts/manuscripts/*.log

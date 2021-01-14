@@ -29,12 +29,8 @@ pull_afl_data <- function(start_date, end_date){
   }
 }
 
-# Pull data for last 5 seasons
+# Pull data for last season
 
-season_2016 <- pull_afl_data(start_date = "2016-01-01", end_date = "2016-12-01")
-season_2017 <- pull_afl_data(start_date = "2017-01-01", end_date = "2017-12-01")
-season_2018 <- pull_afl_data(start_date = "2018-01-01", end_date = "2018-12-01")
-season_2019 <- pull_afl_data(start_date = "2019-01-01", end_date = "2019-12-01")
 season_2020 <- pull_afl_data(start_date = "2020-01-01", end_date = "2020-12-01")
 
 #----------------------- Pre processing ----------------------------
@@ -49,7 +45,7 @@ the_finals <- c("EF", "SF", "QF", "PF", "GF") # Removes finals as these might bi
 
 # Get averages for each player
 
-player_data <- tmp1 %>%
+player_data <- season_2020 %>%
   filter(round %ni% the_finals) %>%
   mutate(player_name = paste0(first_name, " ", surname)) %>%
   group_by(player_name, playing_for) %>%
@@ -97,7 +93,7 @@ lpa_outputs <- get_data(m1)
 # Filter to just Model 1/Classes 6 as this model had the best analytic hierarchy
 
 lpa_outputs_filt <- lpa_outputs %>%
-  filter(model_number == "1" & classes_number == 6)
+  filter(model_number == "6" & classes_number == 2)
 
 # Join back in to main dataset and retain just the class for each player
 # that has the highest probability
@@ -184,19 +180,15 @@ edges <- pairwise_correlations %>%
 #-------------------
 
 player_network_diag <- visNetwork(nodes, edges, height = "1000px", width = "100%",
-           main = "Network diagram of core metrics between the top 100 AFL players on average on these metrics over the past 5 seasons",
-           submain = "<br>Groups determined by probabilistic Latent Profile Analysis of average kicks, marks, handballs, contested marks and<br>contested possessions. Node size = Sum of all metric averages.<br>Edge size = average correlation between players. Correlations < +- 0.8 were filtered out for visual clarity.",
+           main = "Network diagram of core metrics between the top 100 AFL players on average on these metrics over the 2020 season",
+           submain = "<br>Groups determined by probabilistic Latent Profile Analysis of average kicks, marks, handballs, contested marks and<br>contested possessions. Node size = Sum of all metric averages.<br>Edge size = Average correlation between players. Correlations < +- 0.7 were filtered out for visual clarity.",
            footer = "Source: CRAN package fitzRoy which pulls data from www.afltables.com and www.footywire.com",
            background = "#E9EAE0") %>% 
   visIgraphLayout(layout = "layout_nicely",
                   smooth = FALSE,
                   randomSeed = 123) %>%
   visGroups(groupname = "1", color = "#A09BE7") %>% 
-  visGroups(groupname = "2", color = "#FF686B") %>%
-  visGroups(groupname = "3", color = "#FFA3B8") %>% 
-  visGroups(groupname = "4", color = "#93E1D8") %>%
-  visGroups(groupname = "5", color = "#2274A5") %>% 
-  visGroups(groupname = "6", color = "#FEB06A") %>%
+  visGroups(groupname = "2", color = "#93E1D8") %>%
   visLegend() %>%
   visOptions(selectedBy = "group", 
              highlightNearest = TRUE, 
