@@ -206,6 +206,7 @@ full_diff <- full_setup %>%
 
 #---------------------- Analysis -----------------------------------
 
+CairoPNG("afl/output/player-performance.png", 800, 600)
 full_diff %>%
   filter(metric %ni% c("marks", "contested_marks")) %>%
   mutate(metric = str_to_title(metric),
@@ -226,3 +227,4 @@ full_diff %>%
         legend.background = ggplot2::element_rect(fill = "#E1E6E6", colour = "#E1E6E6"),
         legend.box.background = ggplot2::element_rect(fill = "#E1E6E6", colour = "#E1E6E6"),
         legend.key = ggplot2::element_rect(fill = "#E1E6E6", colour = "#E1E6E6"))
+dev.off()
