@@ -212,7 +212,7 @@ full_diff %>%
   mutate(metric = str_to_title(metric),
          metric = gsub("_", " ", metric)) %>%
   ggplot(aes(x = differential, y = value)) +
-  geom_point(colour = "#A09BE7", alpha = 0.8) +
+  geom_point(colour = "#FF686B", alpha = 0.8) +
   geom_smooth(formula = y ~ x, method = "lm", colour = "#2274A5") +
   labs(title = "Relationship between star player performance and expectation of win",
        subtitle = "Each point represents a match. Data from 2017-2020 seasons.",
