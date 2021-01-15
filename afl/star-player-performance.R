@@ -215,9 +215,9 @@ full_diff %>%
   geom_point(colour = "#FF686B", alpha = 0.8) +
   geom_smooth(formula = y ~ x, method = 'glm', 
               method.args = list(family = 'poisson'), colour = "#2274A5") +
-  labs(title = "Relationship between star player performance and expectation of win",
-       subtitle = "Each point represents a match. Data from 2017-2020 seasons.",
-       x = "Difference in points between star's team and opponent's",
+  labs(title = "Relationship between star player performance and comparative ladder position",
+       subtitle = "Each point is a match. Data from 2017-2020 seasons. Line of best fit is Poisson-distributed GLM.",
+       x = "Difference in points on ladder between star's team and opponent's",
        y = "Match sum") +
   facet_grid(rows = vars(metric), cols = vars(player_name)) +
   theme_runoff(grids = TRUE) +
