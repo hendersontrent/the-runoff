@@ -108,11 +108,15 @@ prep_ladder <- function(){
       s_plus <- s+1
       
       first_round <- data_2 %>%
-        filter(round == "1") %>%
         filter(season == s_plus) %>%
+        filter(round == "1") %>%
         filter(home_team == i | away_team == i)
       
-      if(nrow(first_round) < 1){
+      prior_season <- ladder_all_teams %>%
+        filter(team == i) %>%
+        filter(season == s)
+      
+      if(nrow(first_round) < 1 | nrow(prior_season) < 1){
         
         tmp_all <- data.frame(team = c(i),
                               season = c(s),
@@ -129,15 +133,13 @@ prep_ladder <- function(){
             away_team == i & outcome == "Away Win" ~ "Win")) %>%
           dplyr::select(c(outcome))
         
-        prior_season <- ladder_all_teams %>%
-          filter(team == i) %>%
-          filter(season == s) %>%
+        prior_season <- prior_season %>%
           dplyr::select(c(team, season, ladder_pos))
         
         joined <- cbind(prior_season, first_round)
       }
+      calc_list[[i]] <- joined
     }
-    calc_list[[i]] <- joined
   }
   
   ladder_final <- rbindlist(calc_list, use.names = TRUE)

@@ -29,18 +29,9 @@ for(i in years){
   store[[i]] <- tmp
 }
 
-all_seasons <- rbindlist(store, use.names = TRUE)
+tmp1 <- rbindlist(store, use.names = TRUE)
 
 #---------------------- Pre processing -----------------------------
-
-#----------------
-# Merge and clean
-#----------------
-
-# Merge datasets
-
-tmp1 <- bind_rows(season_2011, season_2012, season_2013, season_2014, season_2015,
-                  season_2016, season_2017, season_2018, season_2019, season_2020)
 
 # Aggregate data to match level
 
