@@ -18,6 +18,12 @@ election-forecasts/output/*.html
 brownlow-forecasts/output/*.html
 politics/output/*.html
 
+afl/output/*.png
+nrl/output/*.png
+election-forecasts/output/*.png
+brownlow-forecasts/output/*.png
+politics/output/*.png
+
 afl/manuscripts/*.log
 nrl/manuscripts/*.log
 election-forecasts/manuscripts/*.log

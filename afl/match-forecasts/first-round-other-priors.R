@@ -10,7 +10,7 @@
 
 # Pull data all the way back to 2001
 
-years <- c(seq(from = 2001, to = 2019, by = 1))
+years <- c(seq(from = 2001, to = 2020, by = 1))
 store <- list()
 
 for(i in years){
@@ -34,12 +34,9 @@ all_seasons <- rbindlist(store, use.names = TRUE)
 # DATASET 2: OTHER VARIABLES
 #---------------------------
 
-# Need to filter out 2020 as it was an anomalous season (and had no proper home teams)
-# as we just want to fit a single statistical model with all these variables and not
-# one by one
+# High level aggregation
 
 data_2 <- all_seasons %>%
-  filter(season < 2020) %>%
   group_by(season, round, home_team, away_team) %>%
   summarise(home_score = mean(home_score),
             away_score = mean(away_score)) %>%
@@ -49,28 +46,173 @@ data_2 <- all_seasons %>%
     home_score < away_score  ~ "Away Win",
     home_score == away_score ~ "Draw"))
 
+# Ladder
+
+teams <- unique(data_2$home_team)
+ladder_list <- list()
+
+prep_ladder <- function(){
+  
+  ladders <- data_2 %>%
+    filter(season != 2020) %>%
+    filter(round %ni% c("EF", "GF", "PF", "QF", "SF")) # Remove finals
+  
+  for(i in teams){
+    
+    tmp_home <- ladders %>%
+      filter(home_team == i) %>%
+      mutate(outcome = case_when(
+             outcome == "Home Win" ~ "Win",
+             outcome == "Away Win" ~ "Loss",
+             outcome == "Draw"     ~ "Draw"))
+    
+    tmp_away <- ladders %>%
+      filter(away_team == i) %>%
+      mutate(outcome = case_when(
+        outcome == "Home Win" ~ "Loss",
+        outcome == "Away Win" ~ "Win",
+        outcome == "Draw"     ~ "Draw"))
+    
+    tmp_all <- bind_rows(tmp_home, tmp_away) %>%
+      mutate(team = i) %>%
+      group_by(team, season, outcome) %>%
+      summarise(counter = n()) %>%
+      ungroup() %>%
+      mutate(pts = case_when(
+             outcome == "Win"  ~ 4*counter,
+             outcome == "Draw" ~ 2*counter,
+             outcome == "Loss" ~ 0)) %>%
+      group_by(team, season) %>%
+      summarise(pts = sum(pts)) %>%
+      ungroup()
+    
+    ladder_list[[i]] <- tmp_all
+  }
+  
+  # Bind all together and rank ladder based on points for each season
+  
+  ladder_all_teams <- rbindlist(ladder_list, use.names = TRUE)  %>%
+    group_by(season) %>%
+    mutate(ladder_pos = dense_rank(-pts)) %>%
+    ungroup()
+  
+  # Wrangle data in lag format
+  
+  seasons <- unique(ladder_all_teams$season)
+  calc_list <- list()
+  
+  for(i in teams){
+    
+    for(s in seasons){
+      
+      s_plus <- s+1
+      
+      first_round <- data_2 %>%
+        filter(season == s_plus) %>%
+        filter(round == "1") %>%
+        filter(home_team == i | away_team == i)
+      
+      prior_season <- ladder_all_teams %>%
+        filter(team == i) %>%
+        filter(season == s)
+      
+      if(nrow(first_round) < 1 | nrow(prior_season) < 1){
+        
+        tmp_all <- data.frame(team = c(i),
+                              season = c(s),
+                              ladder_pos = c("NA"),
+                              outcome = c("NA"))
+      } else{
+      
+        first_round <- first_round %>%
+          mutate(outcome = case_when(
+            home_team == i & outcome == "Home Win" ~ "Win",
+            home_team == i & outcome == "Away Win" ~ "Loss",
+            outcome == "Draw"                      ~ "Draw",
+            away_team == i & outcome == "Home Win" ~ "Loss",
+            away_team == i & outcome == "Away Win" ~ "Win")) %>%
+          dplyr::select(c(outcome))
+        
+        prior_season <- prior_season %>%
+          dplyr::select(c(team, season, ladder_pos))
+        
+        joined <- cbind(prior_season, first_round)
+      }
+      calc_list[[i]] <- joined
+    }
+  }
+  
+  ladder_final <- rbindlist(calc_list, use.names = TRUE)
+  
+  return(ladder_final)
+}
+
+# Finals
+
+finals <- data_2
+
+# Won GF
+
+won_gf <- data_2
+
+# Home Team
+
+home_team <- data_2 %>%
+  filter(season != 2020) %>%
+  group_by(season, outcome) %>%
+  summarise(counter = n()) %>%
+  group_by(season) %>%
+  mutate(probs = counter / sum(counter)) %>%
+  ungroup() %>%
+  filter(outcome == "Home Win") %>%
+  mutate(coefficient = "home_team") %>%
+  group_by(coefficient) %>%
+  summarise(mu = mean(probs),
+            sd = sd(probs)) %>%
+  ungroup()
+
 #---------------------- Fit statistical models ---------------------
 
-# Need to get priors for the following variables:
-#   - ladder
-#   - finals
-#   - won_gf
-#   - home_team
+#-------
+# ladder
+#-------
 
-#-------------------------
-# MODEL 2: OTHER VARIABLES
-#-------------------------
+
+
+#-------
+# finals
+#-------
+
+
+
+#-------
+# won_gf
+#-------
 
 
 
 #---------------------- Extract priors and save --------------------
 
-# Extraction (NEED 1 ROW PER VARIABLE!!!)
+mod_outs <- as.data.frame(summary(m)$coefficients)
 
-first_round_other_priors <- mod_2_outs %>%
-  group_by() %>% 
-  summarise() %>% 
+# Check distribution
+
+mod_outs %>%
+  ggplot(aes(x = Value)) +
+  geom_density(alpha = 0.4, colour = "black") +
+  labs(x = "Coefficient",
+       y = "Density") +
+  scale_x_continuous(limits = c(-2,2.5)) +
+  theme_runoff(grids = TRUE) +
+  facet_wrap(~coefficient)
+
+# Calculate mean and SD of coefficients
+
+first_round_other_priors <- mod_outs %>%
+  summarise(mu = mean(Value),
+            sd = sd(Value)) %>% 
   ungroup() %>% 
+  mutate(coefficient = "team") %>%
   dplyr::select(c(coefficient, mu, sd))
 
 # Save for import and use in predictive model

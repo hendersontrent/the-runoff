@@ -11,47 +11,27 @@
 # Author: Trent Henderson, 22 November 2020
 #------------------------------------------
 
-#' Define a reusable function
-#' @param start_date the start date of the AFL season/year to get data for
-#' @param end_date the end date of the AFL season/year to get data for
-#' 
+# Pull data all the way back to 2011
 
-pull_afl_data <- function(start_date, end_date){
+years <- c(seq(from = 2011, to = 2020, by = 1))
+store <- list()
+
+for(i in years){
+  
+  start_date <- as.character(paste0(i,"-01-01"))
+  end_date <- as.character(paste0(i,"-12-01"))
+  
   tmp <- get_afltables_stats(start_date = start_date, end_date = end_date) %>%
     clean_names() %>%
     mutate(season = gsub("-.*", "\\1", date),
            season = as.numeric(season))
   
-  if(nrow(tmp) == 0){
-    print("Data not pulled successfully.")
-  } else{
-    return(tmp)
-  }
+  store[[i]] <- tmp
 }
 
-# Pull data for the last 10 seasons
-
-season_2011 <- pull_afl_data(start_date = "2011-01-01", end_date = "2011-12-01")
-season_2012 <- pull_afl_data(start_date = "2012-01-01", end_date = "2012-12-01")
-season_2013 <- pull_afl_data(start_date = "2013-01-01", end_date = "2013-12-01")
-season_2014 <- pull_afl_data(start_date = "2014-01-01", end_date = "2014-12-01")
-season_2015 <- pull_afl_data(start_date = "2015-01-01", end_date = "2015-12-01")
-season_2016 <- pull_afl_data(start_date = "2016-01-01", end_date = "2016-12-01")
-season_2017 <- pull_afl_data(start_date = "2017-01-01", end_date = "2017-12-01")
-season_2018 <- pull_afl_data(start_date = "2018-01-01", end_date = "2018-12-01")
-season_2019 <- pull_afl_data(start_date = "2019-01-01", end_date = "2019-12-01")
-season_2020 <- pull_afl_data(start_date = "2020-01-01", end_date = "2020-12-01")
+tmp1 <- rbindlist(store, use.names = TRUE)
 
 #---------------------- Pre processing -----------------------------
-
-#----------------
-# Merge and clean
-#----------------
-
-# Merge datasets
-
-tmp1 <- bind_rows(season_2011, season_2012, season_2013, season_2014, season_2015,
-                  season_2016, season_2017, season_2018, season_2019, season_2020)
 
 # Aggregate data to match level
 
