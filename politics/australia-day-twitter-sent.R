@@ -72,26 +72,35 @@ d <- rbindlist(storage, use.names = TRUE)
 # Hashtag consistency
 #--------------------
 
+# Remove retweets
+
+d1 <- d %>%
+  filter(!is.na(flag)) # %>%
+  #filter(isRetweet == "FALSE")
+
 # Get date range of data to add to graph
 
-dates <- gsub(" .*", "", d$created)
-earliest <- min(as.Date(d$created, format = "%Y-%M-%D"))
-latest <- min(as.Date(d$created, format = "%Y-%M-%D"))
+dates <- gsub(" .*", "", d1$created)
+earliest <- min(as.Date(d1$created, format = "%Y-%M-%D"))
+latest <- min(as.Date(d1$created, format = "%Y-%M-%D"))
 
 # Produce graph
 
-d %>%
+d1 %>%
   group_by(flag) %>%
   summarise(counter = n()) %>%
   ungroup() %>%
+  drop_na() %>%
   ggplot(aes(x = reorder(flag, counter), y = counter)) +
   geom_bar(stat = "identity", alpha = 0.8) +
-  labs(title = "Counts of hashtag combination related to Australia Day",
-       subtitle = str_wrap(paste0("Twitter data scraped on: ", Sys.Date(), ". Total tweets analysed: ", nrow(d), ". ",
-                                  "Earliest tweet in dataset: ", earliest, ". Most recent tweet in dataset: ", latest), 
+  labs(title = "Frequency of hashtag combinations related to Australia Day",
+       subtitle = str_wrap(paste0("Twitter data scraped on: ", Sys.Date(), ". Total tweets analysed: ", nrow(d1), ". ",
+                                  "Earliest tweet in dataset: ", earliest, ". Most recent tweet in dataset: ", latest, ". ",
+                                  "NOTE: Tweets with no explicit hashtags were filtered prior to calculating frequencies."), 
                            width = 120),
        x = "Hashtag combination",
        y = "Frequency",
        caption = "Analysis: therunoffnews.com") +
   coord_flip() +
-  theme_runoff(grids = TRUE)
+  theme_runoff(grids = TRUE) +
+  theme(plot.title = element_text(face = "bold"))
