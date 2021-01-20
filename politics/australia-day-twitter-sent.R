@@ -105,12 +105,19 @@ d1 %>%
 #------------------
 
 d1 %>%
-  count(location, sort = TRUE) %>%
-  mutate(location = reorder(location,n)) %>%
+  filter(nchar(as.character(location)) > 3) %>% # Remove nuisance blank space locations
+  mutate(location = case_when(
+         grepl("Melbourne", location) ~ "Melbourne, Victoria",
+         grepl("Brisbane", location)  ~ "Brisbane, Queensland",
+         grepl("Sydney", location)    ~ "Sydney, New South Wales",
+         TRUE                         ~ location)) %>%
+  group_by(location, flag) %>%
+  summarise(counter = n()) %>%
+  ungroup() %>%
   drop_na() %>%
-  filter(nchar(as.character(location)) > 3) %>%
-  top_n(20) %>%
-  ggplot(aes(x = location, y = n)) +
+  filter(location != "Palm Harbor, FL.") %>%
+  top_n(counter, n = 20) %>%
+  ggplot(aes(x = reorder(location, counter), y = counter)) +
   geom_bar(stat = "identity", alpha = 0.8) +
   labs(title = "Location of tweets using hashtags related to Australia Day",
        subtitle = str_wrap(paste0("Twitter data scraped on: ", Sys.Date(), ". Total tweets analysed: ", nrow(d1), ". ",
