@@ -43,10 +43,18 @@ pull_tweets <- function(hashtag){
   return(df)
 }
 
-ausday <- pull_tweets("#AustraliaDay")
-invday <- pull_tweets("#InvasionDay")
+# Run the function for relevant hashtags of interest
 
-d <- bind_rows(ausday, invday)
+hashes <- c("#AustraliaDay", "#InvasionDay", "changethedate")
+storage <- list()
+for(i in hashes){
+  
+  tmp <- pull_tweets(i)
+  
+  storage[[i]] <- tmp
+}
+
+d <- rbindlist(storage, use.names = TRUE)
 
 #----------------------- High level analysis -----------------------
 
