@@ -67,17 +67,18 @@ sent <- d %>%
   dplyr::select(c(status_id, text)) %>% 
   unnest_tokens(word, text)
 
-sent_lex <- sent %>% 
-  left_join(lexicon, by = c("word" = "word"))
-
 # Aggregated sentiment - NOTE: no validation or topic modelling here, just raw lexicon counts
 
-sent_lex %>% 
-  filter(!is.na(sentiment)) %>% 
-  group_by(sentiment) %>% 
+texts <- d %>%
+  dplyr::select(c(status_id, text))
+
+sent_agg <- sent %>% 
+  left_join(lexicon, by = c("word" = "word")) %>%
+  filter(!is.na(sentiment)) %>%
+  group_by(status_id, sentiment) %>% 
   summarise(counter = n()) %>%
   ungroup() %>%
-  mutate(props = counter / sum(counter))
+  inner_join(texts, by = c("status_id" = "status_id"))
 
 #-------------------------
 # Hashtag pairing analysis
