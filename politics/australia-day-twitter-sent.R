@@ -97,6 +97,7 @@ latest <- min(as.Date(d1$created, format = "%Y-%M-%D"))
 
 # Produce graph
 
+CairoPNG("politics/output/ausday-tweet-combos.png", 800, 600)
 d1 %>%
   group_by(flag) %>%
   summarise(counter = n()) %>%
@@ -116,11 +117,13 @@ d1 %>%
   coord_flip() +
   theme_runoff(grids = TRUE) +
   theme(plot.title = element_text(face = "bold"))
+dev.off()
 
 #------------------
 # Location analysis
 #------------------
 
+CairoPNG("politics/output/ausday-tweet-top-locations.png", 800, 600)
 d1 %>%
   filter(nchar(as.character(location)) > 3) %>% # Remove nuisance blank space locations
   mutate(location = case_when(
@@ -147,3 +150,4 @@ d1 %>%
   coord_flip() +
   theme_runoff(grids = TRUE) +
   theme(plot.title = element_text(face = "bold"))
+dev.off()
