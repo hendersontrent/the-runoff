@@ -25,15 +25,9 @@ source("twitter-auth/twitter-creds.R") # Not pushed to git due to privacy
 
 pull_tweets <- function(hashtag){
   
-  if(!grepl("#", hashtag)){
-    stop("hashtag should have a # at the front and be written as one word.")
-  }
+  # Pull tweets and add some useful flags as columns
   
-  tweets <- searchTwitter(hashtag, n = 3200, lang = "en")
-  
-  # Convert to dataframe and add some useful flags as columns
-  
-  df <- twListToDF(tweets) %>%
+  tweets <- search_tweets(q = hashtag, n = 3200, lang = "en") %>%
     mutate(hashtag = hashtag) %>%
     mutate(flag = case_when(
            grepl("#AustraliaDay", text) & !grepl("#InvasionDay", text) & !grepl("#changethedate", text) ~ "#AustraliaDay only",
@@ -44,7 +38,7 @@ pull_tweets <- function(hashtag){
            !grepl("#AustraliaDay", text) & grepl("#InvasionDay", text) & grepl("#changethedate", text)  ~ "#InvasionDay and #changethedate",
            grepl("#AustraliaDay", text) & grepl("#InvasionDay", text) & grepl("#changethedate", text)   ~ "#AustraliaDay, #InvasionDay, and #changethedate"))
   
-  return(df)
+  return(tweets)
 }
 
 # Run the function for relevant hashtags of interest
@@ -68,9 +62,9 @@ d <- rbindlist(storage, use.names = TRUE)
 
 
 
-#--------------------
-# Hashtag consistency
-#--------------------
+#-------------------------
+# Hashtag pairing analysis
+#-------------------------
 
 # Remove retweets
 
@@ -96,11 +90,36 @@ d1 %>%
   labs(title = "Frequency of hashtag combinations related to Australia Day",
        subtitle = str_wrap(paste0("Twitter data scraped on: ", Sys.Date(), ". Total tweets analysed: ", nrow(d1), ". ",
                                   "Earliest tweet in dataset: ", earliest, ". Most recent tweet in dataset: ", latest, ". ",
-                                  "NOTE: Tweets with no explicit hashtags were filtered prior to calculating frequencies."), 
+                                  "NOTE: Tweets with no explicit hashtags were filtered prior to calculating frequencies - this removed ", 
+                                  (nrow(d)-nrow(d1)), " tweets."), 
                            width = 120),
        x = "Hashtag combination",
        y = "Frequency",
        caption = "Analysis: therunoffnews.com") +
+  coord_flip() +
+  theme_runoff(grids = TRUE) +
+  theme(plot.title = element_text(face = "bold"))
+
+#------------------
+# Location analysis
+#------------------
+
+d1 %>%
+  count(location, sort = TRUE) %>%
+  mutate(location = reorder(location,n)) %>%
+  drop_na() %>%
+  filter(nchar(as.character(location)) > 3) %>%
+  top_n(20) %>%
+  ggplot(aes(x = location, y = n)) +
+  geom_bar(stat = "identity", alpha = 0.8) +
+  labs(title = "Location of tweets using hashtags related to Australia Day",
+       subtitle = str_wrap(paste0("Twitter data scraped on: ", Sys.Date(), ". Total tweets analysed: ", nrow(d1), ". ",
+                                  "Earliest tweet in dataset: ", earliest, ". Most recent tweet in dataset: ", latest, ". ",
+                                  "NOTE: Tweets with no explicit hashtags were filtered prior to calculating frequencies - this removed ", 
+                                  (nrow(d)-nrow(d1)), " tweets. Locations that were NA were also filtered prior to analysis."), 
+                           width = 120),
+       x = "Location",
+       y = "Frequency") +
   coord_flip() +
   theme_runoff(grids = TRUE) +
   theme(plot.title = element_text(face = "bold"))
