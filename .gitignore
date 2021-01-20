@@ -5,6 +5,7 @@
 .Rproj
 
 brownlow-forecasts/*
+twitter-auth/*.R
 
 afl/data/*
 nrl/data/*

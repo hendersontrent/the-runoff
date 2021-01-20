@@ -51,7 +51,7 @@ data_2 <- all_seasons %>%
 teams <- unique(data_2$home_team)
 ladder_list <- list()
 
-prep_ladder <- function(){
+ladder_1 <- function(){
   
   ladders <- data_2 %>%
     filter(season != 2020) %>%
@@ -62,9 +62,9 @@ prep_ladder <- function(){
     tmp_home <- ladders %>%
       filter(home_team == i) %>%
       mutate(outcome = case_when(
-             outcome == "Home Win" ~ "Win",
-             outcome == "Away Win" ~ "Loss",
-             outcome == "Draw"     ~ "Draw"))
+        outcome == "Home Win" ~ "Win",
+        outcome == "Away Win" ~ "Loss",
+        outcome == "Draw"     ~ "Draw"))
     
     tmp_away <- ladders %>%
       filter(away_team == i) %>%
@@ -79,9 +79,9 @@ prep_ladder <- function(){
       summarise(counter = n()) %>%
       ungroup() %>%
       mutate(pts = case_when(
-             outcome == "Win"  ~ 4*counter,
-             outcome == "Draw" ~ 2*counter,
-             outcome == "Loss" ~ 0)) %>%
+        outcome == "Win"  ~ 4*counter,
+        outcome == "Draw" ~ 2*counter,
+        outcome == "Loss" ~ 0)) %>%
       group_by(team, season) %>%
       summarise(pts = sum(pts)) %>%
       ungroup()
@@ -95,57 +95,71 @@ prep_ladder <- function(){
     group_by(season) %>%
     mutate(ladder_pos = dense_rank(-pts)) %>%
     ungroup()
+}
+
+lads <- ladder_1()
+
+# Main function
+
+lag_ladder <- function(team){
   
   # Wrangle data in lag format
   
-  seasons <- unique(ladder_all_teams$season)
+  seasons <- unique(lads$season)
   calc_list <- list()
-  
-  for(i in teams){
     
-    for(s in seasons){
+  for(s in seasons){
       
-      s_plus <- s+1
-      
-      first_round <- data_2 %>%
-        filter(season == s_plus) %>%
-        filter(round == "1") %>%
-        filter(home_team == i | away_team == i)
-      
-      prior_season <- ladder_all_teams %>%
-        filter(team == i) %>%
-        filter(season == s)
-      
-      if(nrow(first_round) < 1 | nrow(prior_season) < 1){
-        
-        tmp_all <- data.frame(team = c(i),
-                              season = c(s),
-                              ladder_pos = c("NA"),
-                              outcome = c("NA"))
-      } else{
-      
-        first_round <- first_round %>%
-          mutate(outcome = case_when(
-            home_team == i & outcome == "Home Win" ~ "Win",
-            home_team == i & outcome == "Away Win" ~ "Loss",
-            outcome == "Draw"                      ~ "Draw",
-            away_team == i & outcome == "Home Win" ~ "Loss",
-            away_team == i & outcome == "Away Win" ~ "Win")) %>%
-          dplyr::select(c(outcome))
-        
-        prior_season <- prior_season %>%
-          dplyr::select(c(team, season, ladder_pos))
-        
-        joined <- cbind(prior_season, first_round)
-      }
-      calc_list[[i]] <- joined
+    s_plus <- s+1
+    
+    first_round_home <- data_2 %>%
+      filter(season == s_plus) %>%
+      filter(round == "1") %>%
+      filter(home_team == team)
+    
+    first_round_away <- data_2 %>%
+      filter(season == s_plus) %>%
+      filter(round == "1") %>%
+      filter(away_team == team)
+    
+    if(nrow(first_round_home) > 0){
+      first_round <- first_round_home %>%
+        mutate(outcome = case_when(
+          home_team == team & outcome == "Home Win" ~ "Win",
+          home_team == team & outcome == "Away Win" ~ "Loss",
+          outcome == "Draw"                         ~ "Draw")) %>%
+        dplyr::select(c(outcome))
+    } else{
+      first_round <- first_round_away %>%
+        mutate(outcome = case_when(
+          outcome == "Draw"                         ~ "Draw",
+          away_team == team & outcome == "Home Win" ~ "Loss",
+          away_team == team & outcome == "Away Win" ~ "Win")) %>%
+        dplyr::select(c(outcome))
     }
+      
+    prior_season <- lads %>%
+      filter(team == team) %>%
+      filter(season == s) %>%
+      dplyr::select(c(team, season, ladder_pos))
+        
+    joined <- cbind(prior_season, first_round)
+    
+    calc_list[[s]] <- joined
   }
   
   ladder_final <- rbindlist(calc_list, use.names = TRUE)
-  
   return(ladder_final)
 }
+
+# Run the lag function
+
+lag_output <- list()
+for(t in teams){
+  tmp <- lag_ladder(team = t)
+  lag_output[[t]] <- tmp
+}
+lag_final <- rbindlist(lag_output, use.names = TRUE)
 
 # Finals
 
