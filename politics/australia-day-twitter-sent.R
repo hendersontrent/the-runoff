@@ -152,3 +152,37 @@ d1 %>%
   theme_runoff(grids = TRUE) +
   theme(plot.title = element_text(face = "bold"))
 dev.off()
+
+#------------------
+# Top word analysis
+#------------------
+
+earliest_full <- min(as.Date(d$created, format = "%Y-%M-%D"))
+latest_full <- min(as.Date(d$created, format = "%Y-%M-%D"))
+
+my_stop_words <- stop_words %>% 
+  dplyr::select(-lexicon) %>% 
+  bind_rows(data.frame(word = c("https", "t.co", "rt", "amp")))
+
+tweet_words_interesting <- sent %>% 
+  anti_join(my_stop_words)
+
+CairoPNG("politics/output/ausday-tweet-top-words.png", 800, 600)
+tweet_words_interesting %>% 
+  filter(nchar(word) > 3) %>%
+  filter(!agrepl("it's", word)) %>% # Remove nuisance word
+  count(word, sort = TRUE) %>% 
+  slice(1:20) %>% 
+  ggplot(aes(x = reorder(word, n), y = n)) + 
+  geom_bar(stat = "identity") + 
+  labs(title = "Top 20 words",
+       subtitle = str_wrap(paste0("Twitter data scraped on: ", Sys.Date(), ". Total tweets analysed: ", nrow(d), ". ",
+                                  "Earliest tweet in dataset: ", earliest_full, ". Most recent tweet in dataset: ", latest_full,"."), 
+                           width = 120),
+       x = "Word",
+       y = "Frequency") +
+  scale_y_continuous(labels = comma) +
+  coord_flip() +
+  theme(plot.title = element_text(face = "bold"),
+        axis.text.x = element_text(angle = 60, hjust = 1))
+dev.off()
