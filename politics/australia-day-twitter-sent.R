@@ -36,9 +36,13 @@ pull_tweets <- function(hashtag){
   df <- twListToDF(tweets) %>%
     mutate(hashtag = hashtag) %>%
     mutate(flag = case_when(
-           grepl("#AustraliaDay", text)                               ~ "#AustraliaDay only",
-           grepl("#InvasionDay", text)                                ~ "#InvasionDay only",
-           grepl("#AustraliaDay", text) & grepl("#InvasionDay", text) ~ "Both #AustraliaDay and #InvasionDay"))
+           grepl("#AustraliaDay", text) & !grepl("#InvasionDay", text) & !grepl("#changethedate", text) ~ "#AustraliaDay only",
+           grepl("#InvasionDay", text) & !grepl("#AustraliaDay", text) & !grepl("#changethedate", text) ~ "#InvasionDay only",
+           grepl("#changethedate", text) & !grepl("#AustraliaDay", text) & !grepl("#InvasionDay", text) ~ "#changethedate only",
+           grepl("#AustraliaDay", text) & grepl("#InvasionDay", text) & !grepl("#changethedate", text)  ~ "#AustraliaDay and #InvasionDay",
+           grepl("#AustraliaDay", text) & !grepl("#InvasionDay", text) & grepl("#changethedate", text)  ~ "#AustraliaDay and #changethedate",
+           !grepl("#AustraliaDay", text) & grepl("#InvasionDay", text) & grepl("#changethedate", text)  ~ "#InvasionDay and #changethedate",
+           grepl("#AustraliaDay", text) & grepl("#InvasionDay", text) & grepl("#changethedate", text)   ~ "#AustraliaDay, #InvasionDay, and #changethedate"))
   
   return(df)
 }
